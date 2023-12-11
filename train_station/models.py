@@ -16,10 +16,36 @@ class Station(models.Model):
 class Route(models.Model):
     source = models.ForeignKey(to=Station, on_delete=models.CASCADE, related_name="source_routes")
     destination = models.ForeignKey(to=Station, on_delete=models.CASCADE, related_name="destination_routes")
-    distance = models.IntegerField()
+    distance = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.source.name} - {self.destination.name}"
+
+    @staticmethod
+    def validate_route(source, destination, error_to_raise):
+        if source == destination:
+            raise error_to_raise(
+                "Source and destination can't be the same"
+            )
+
+    def clean(self):
+        Route.validate_route(
+            self.source,
+            self.destination,
+            error_to_raise=ValidationError,
+        )
+
+    def save(
+            self,
+            force_insert=False,
+            force_update=False,
+            using=None,
+            update_fields=None,
+    ):
+        self.full_clean()
+        return super(Route, self).save(
+            force_insert, force_update, using, update_fields
+        )
 
 
 class TrainType(models.Model):
