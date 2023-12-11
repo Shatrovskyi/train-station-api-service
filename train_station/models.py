@@ -67,6 +67,10 @@ class Train(models.Model):
     class Meta:
         ordering = ["name"]
 
+    @property
+    def capacity(self) -> int:
+        return self.cargo_num * self.places_in_cargo
+
     def __str__(self):
         return self.name
 
