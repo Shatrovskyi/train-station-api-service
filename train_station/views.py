@@ -60,11 +60,6 @@ class CrewViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
-class JourneyPagination(PageNumberPagination):
-    page_size = 10
-    max_page_size = 100
-
-
 class JourneyViewSet(viewsets.ModelViewSet):
     queryset = (
         Journey.objects.all()
@@ -78,7 +73,6 @@ class JourneyViewSet(viewsets.ModelViewSet):
     )
     serializer_class = JourneySerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-    pagination_class = JourneyPagination
 
     def get_queryset(self):
         departure_date = self.request.query_params.get("departure_date")
