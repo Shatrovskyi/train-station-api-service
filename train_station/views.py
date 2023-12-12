@@ -22,15 +22,11 @@ from train_station.serializers import (
     JourneyListSerializer,
     JourneyDetailSerializer,
     OrderSerializer,
-    OrderListSerializer
+    OrderListSerializer,
 )
 
 
-class StationViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet
-):
+class StationViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet):
     queryset = Station.objects.all()
     serializer_class = StationSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
@@ -56,29 +52,31 @@ class TrainViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
-class CrewViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet
-):
+class CrewViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet):
     queryset = Crew.objects.all()
     serializer_class = CrewSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+class JourneyPagination(PageNumberPagination):
+    page_size = 10
+    max_page_size = 100
+
+
 class JourneyViewSet(viewsets.ModelViewSet):
     queryset = (
         Journey.objects.all()
-        .select_related("route", "train").prefetch_related("crews")
+        .select_related("route", "train")
+        .prefetch_related("crews")
         .annotate(
-            tickets_available=(
-                F("train__cargo_num") * F("train__places_in_cargo")
-                - Count("tickets")
+            taken_seats=(
+                F("train__cargo_num") * F("train__places_in_cargo") - Count("tickets")
             )
         )
     )
     serializer_class = JourneySerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    pagination_class = JourneyPagination
 
     def get_queryset(self):
         departure_date = self.request.query_params.get("date")
