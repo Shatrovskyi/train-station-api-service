@@ -1,5 +1,7 @@
 from datetime import datetime
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
@@ -79,8 +81,8 @@ class JourneyViewSet(viewsets.ModelViewSet):
     pagination_class = JourneyPagination
 
     def get_queryset(self):
-        departure_date = self.request.query_params.get("date")
-        train_type_id_str = self.request.query_params.get("train_type")
+        departure_date = self.request.query_params.get("departure_date")
+        train_type_id = self.request.query_params.get("train")
         route_id = self.request.query_params.get("route")
 
         queryset = self.queryset
@@ -88,8 +90,8 @@ class JourneyViewSet(viewsets.ModelViewSet):
         if departure_date:
             departure_date = datetime.strptime(departure_date, "%Y-%m-%d").date()
             queryset = queryset.filter(departure_time__date=departure_date)
-        if train_type_id_str:
-            queryset = queryset.filter(train_type_id=int(train_type_id_str))
+        if train_type_id:
+            queryset = queryset.filter(train_id=train_type_id)
         if route_id:
             queryset = queryset.filter(route_id=route_id)
 
@@ -103,6 +105,31 @@ class JourneyViewSet(viewsets.ModelViewSet):
             return JourneyDetailSerializer
 
         return JourneySerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "train",
+                type=OpenApiTypes.INT,
+                description="Filter by train id (ex. ?train=1)",
+            ),
+            OpenApiParameter(
+                "route",
+                type=OpenApiTypes.INT,
+                description="Filter by route id (ex. ?route=1)",
+            ),
+            OpenApiParameter(
+                "departure_date",
+                type=OpenApiTypes.DATE,
+                description=(
+                        "Filter by departure_time of Journey "
+                        "(ex. ?departure_date=2023-11-11)"
+                ),
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
